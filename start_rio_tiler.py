@@ -10,23 +10,20 @@ app = Flask(__name__)
 
 app.secret_key = b'hjlkasejd69879o'
 
-reader_image = None
-
-with Reader("output_cog_warp.tif") as image:
-    reader_image = image
-
-
 @app.route('/')
 def index():
     return 'Rio Tiler Internal Tile Service'
 
 @app.route('/<path:path>')
 def tile(path):
-    with Reader("output_cog_warp.tif") as image:
-        req_para = path.split('/')
-        layer_zoom = req_para[0]
-        layer_row = req_para[1]
-        layer_col = req_para[2]
+
+    req_para = path.split('/')
+    layer_name = req_para[0]
+
+    with Reader(layer_name) as image:
+        layer_zoom = req_para[1]
+        layer_row = req_para[2]
+        layer_col = req_para[3]
 
         img = image.tile(int(layer_col), int(layer_row), int(layer_zoom)) 
         # img = image.tile(layer_zoom, layer_row, layer_col) 
@@ -49,4 +46,4 @@ def favicon():
     return ''
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)

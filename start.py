@@ -1,6 +1,6 @@
 from flask import Flask, request, Response, session, escape, render_template, redirect, jsonify, send_file
 
-import gdal_tile_service as ts
+import services.gdal_tile_service as ts
 
 app = Flask(__name__)
 
