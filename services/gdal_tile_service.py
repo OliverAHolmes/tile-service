@@ -60,14 +60,23 @@ def tile_edges(x, y, z):
 
 def make_tile(layer_name, x, y, z):
 
-    open_file = gdal.Open('datasets/' + layer_name, gdal.GA_ReadOnly)
+    data_file = '/vsimem/' + layer_name
+
+    file_exists = gdal.VSIStatL(data_file) is not None
+
+    if not file_exists:
+        open_file = gdal.Open('datasets/' + layer_name, gdal.GA_ReadOnly)
+        driver = gdal.GetDriverByName('GTiff')
+        driver.CreateCopy(data_file, open_file)
+        open_file = None
+
     start_time_tile = time.time()
     test_mem = '/vsimem/{}_{}_{}.png'.format(x,y,z)
 
     tile_bounds = tile_edges(x,y,z)
 
     try:
-        out_ds = gdal.Warp(test_mem, open_file, format='PNG', outputBounds=[ tile_bounds[0],tile_bounds[1],tile_bounds[2],tile_bounds[3] ],errorThreshold=0,width=256, height=256, dstSRS="EPSG:4326", resampleAlg="average")
+        out_ds = gdal.Warp(test_mem, data_file, format='PNG', outputBounds=[ tile_bounds[0],tile_bounds[1],tile_bounds[2],tile_bounds[3] ],errorThreshold=0,width=256, height=256, dstSRS="EPSG:4326", resampleAlg="average")
         red_band = out_ds.GetRasterBand(1).ReadAsArray()
         green_band = out_ds.GetRasterBand(2).ReadAsArray()
         blue_band = out_ds.GetRasterBand(3).ReadAsArray()
