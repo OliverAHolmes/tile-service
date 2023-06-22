@@ -2,17 +2,10 @@ from osgeo import gdal
 from PIL import Image
 import io
 import numpy as np
-import math
-
 from math import log, tan, radians, cos, pi, floor, degrees, atan, sinh
-from flask import Flask, request, Response
-import time
-import pyproj
-import json
 
 def sec(x):
     return(1/cos(x))
-
 
 def latlon_to_xyz(lat, lon, z):
     tile_count = pow(2, z)
@@ -55,13 +48,15 @@ def tile_edges(x, y, z):
     lon1, lon2 = x_to_lon_edges(x, z)
     return[str(lon1), str(lat2), str(lon2), str(lat1)]
 
-def make_tile(layer_name, x, y, z):
+
+def return_tile(layer_name, x, y, z):
 
     open_file = gdal.Open('datasets/' + layer_name, gdal.GA_ReadOnly)
-    start_time_tile = time.time()
     test_mem = '/vsimem/{}_{}_{}.png'.format(x,y,z)
 
     tile_bounds = tile_edges(x,y,z)
+
+    print(tile_bounds)
 
     try:
         out_ds = gdal.Warp(test_mem, open_file, format='PNG', outputBounds=[ tile_bounds[0],tile_bounds[1],tile_bounds[2],tile_bounds[3] ],errorThreshold=0,width=256, height=256, dstSRS="EPSG:4326", resampleAlg="average")
@@ -85,28 +80,4 @@ def make_tile(layer_name, x, y, z):
     except Exception as e:
         print(e)
 
-    if return_image.mode in ("RGBA", "P"):
-        format = 'png'
-    else:
-        return_image = return_image.convert('RGB')
-        format = 'jpeg'
-
-    byte_io = io.BytesIO()
-    return_image.save(byte_io, format=format.upper())
-    file_size = byte_io.getbuffer().nbytes
-
-    res = Response()
-    res.headers["Content-Length"] = file_size
-    res.headers["Content-Type"] = 'image/' + format
-
-    print(str(time.time() - start_time_tile))
-
-    return (byte_io.getvalue(), 200, res.headers.items())
-
-def get_tile(layer_name, x, y, z):
-
-    for _ in range(1, 3):
-        try:
-            return make_tile(layer_name, x, y, z)
-        except Exception as _:
-            pass
+    return return_image

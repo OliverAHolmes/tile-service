@@ -161,3 +161,7 @@ cython_debug/
 
 test_data/
 datasets/
+
+.DS_Store
+
+maps/
