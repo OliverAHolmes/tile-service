@@ -36,3 +36,5 @@ https://jimmyutterstrom.com/blog/2019/06/05/map-tiles-to-geotiff/
 
 
 https://gis.stackexchange.com/questions/264793/crop-raster-in-memory-with-python-gdal-bindings
+
+source venv/bin/activate

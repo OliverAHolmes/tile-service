@@ -1,6 +1,5 @@
 from osgeo import gdal
 from PIL import Image
-import io
 import numpy as np
 from math import log, tan, radians, cos, pi, floor, degrees, atan, sinh
 
