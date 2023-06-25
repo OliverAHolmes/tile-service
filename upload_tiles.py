@@ -1,10 +1,11 @@
 from osgeo import gdal, osr
 import services.make_tile as make_tile
-import os
+import services.wasabisys as wasabisys
+import os, io
 import mercantile
 
 # Open the dataset
-dataset = gdal.Open('datasets/645465335874aa00066577b2.tif')
+dataset = gdal.Open("datasets/645465335874aa00066577b2.tif")
 
 # Get the GeoTransform object
 geo_transform = dataset.GetGeoTransform()
@@ -43,7 +44,9 @@ transform = osr.CoordinateTransformation(old_crs, new_crs)
 
 # Get the corners
 corner_coordinates = [(minx, miny), (minx, maxy), (maxx, miny), (maxx, maxy)]
-transformed_corners = [transform.TransformPoint(coord[0], coord[1]) for coord in corner_coordinates]
+transformed_corners = [
+    transform.TransformPoint(coord[0], coord[1]) for coord in corner_coordinates
+]
 
 # Compute the bounds in the new coordinate system
 minx_4326 = min([corner[0] for corner in transformed_corners])
@@ -55,18 +58,47 @@ maxy_4326 = max([corner[1] for corner in transformed_corners])
 bounds = (minx_4326, miny_4326, maxx_4326, maxy_4326)
 
 # Zoom levels
-zoom_levels = range(1, 18)
+zoom_levels = range(1, 22)
 
 for z in zoom_levels:
     # Get the tiles intersecting the bounding box at each zoom level
     tiles = list(mercantile.tiles(bounds[1], bounds[0], bounds[3], bounds[2], z))
-    for tile in tiles:
 
+    print(f"Tiles for zoom level {z}: {len(tiles)}")
+
+    zoom_count = len(tiles)
+
+    for tile in tiles:
         # Get image for tile
-        return_tile = make_tile.return_tile('645465335874aa00066577b2.tif', tile.x, tile.y, tile.z)
+        return_tile = make_tile.return_tile(
+            "645465335874aa00066577b2.tif", tile.x, tile.y, tile.z
+        )
 
         # Create the directories if they do not exist
         os.makedirs(f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}", exist_ok=True)
 
+        tile_key = f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png"
+        
+        if(wasabisys.test_if_tile_exists(tile_key, "ollys-documents")):
+            zoom_count -= 1
+            continue
+
         # Save the image to directory
-        return_tile.save(f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png", format='PNG')
+        return_tile.save(
+            f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png",
+            format="PNG",
+        )
+
+        # Create a BytesIO object
+        img_byte_arr = io.BytesIO()
+
+        # Write the PIL image to byte array
+        return_tile.save(img_byte_arr, format="PNG")
+
+        wasabisys.upload_image(
+            f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png",
+            "ollys-documents",
+            io.BytesIO(img_byte_arr.getvalue()),
+        )
+        zoom_count -= 1
+        print(f"Tiles remaining: {zoom_count} in zoom level {z}")
