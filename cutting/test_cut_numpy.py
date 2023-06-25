@@ -63,7 +63,7 @@ mem_file = '/vsimem/clipped_image.png'
 
 # Clip the input dataset to the specified bounding box
 gdal.Translate(mem_file, dataset, projWin=[ulx, uly, lrx, lry], options=output_options)
-# gdal.Warp(mem_file, open_file, format='PNG',width=256, height=256, dstSRS="EPSG:4326", srcSRS="EPSG:7850", resampleAlg="near")
+# gdal.Warp(mem_file, mem_file, format='PNG',width=256, height=256, dstSRS="EPSG:3857", srcSRS="EPSG:7850", resampleAlg="near")
 
 # Load the virtual file into a PIL image
 # Read /vsimem/output.png 
