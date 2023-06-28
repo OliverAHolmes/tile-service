@@ -1,10 +1,13 @@
 from flask import Flask, Response, request
+from flask_cors import CORS
 import io
 from PIL import ImageEnhance
 
 import services.wasabisys as wasabisys
 
 app = Flask(__name__)
+
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.secret_key = b"hjlkasejd69879o"
 
@@ -24,14 +27,13 @@ def tile(path):
 
     brightness = request.args.get("brightness")
     enhance = request.args.get("enhance")
-    opacity = request.args.get('opacity')
-    sharpness = request.args.get('sharpness') 
-    apply_overlay = request.args.get('apply_overlay')
+    apply_overlay = request.args.get("apply_overlay")
 
     return_image = wasabisys.download_image(
         f"maps/{layer_name}/{layer_zoom}/{layer_col}/{layer_row}.png",
         "ollys-documents",
         (enhance == "true" if enhance is not None else False),
+        (apply_overlay == "true" if apply_overlay is not None else False),
     )
 
     if brightness is not None:
@@ -61,4 +63,4 @@ def favicon():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True, threaded=True)

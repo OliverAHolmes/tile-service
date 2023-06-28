@@ -63,24 +63,26 @@ def upload_image(key_name, bucket_name, file_obj):
     return True
 
 
-def download_image(key_name, bucket_name, enhance=False):
+def download_image(key_name, bucket_name, enhance=False, overlay=False):
+    base_image = None
+    overlay_image = Image.open("GeoNotesOverlay.png") if overlay else None
+
     try:
-        # Create a byte stream
         byte_stream = io.BytesIO()
-
-        # Download file into byte stream
         s3.Bucket(bucket_name).download_fileobj(key_name, byte_stream)
+        byte_stream.seek(0)  # Ensure you're at the start of the stream
 
-        # Ensure you're at the start of the stream
-        byte_stream.seek(0)
-
+        base_image = Image.open(byte_stream)
         if enhance:
-            return enhance_image(byte_stream)
-        else:
-            return Image.open(byte_stream)
-    except ClientError as e:
-        logging.error(e)
-        return False
+            base_image = enhance_image(byte_stream)
+
+    except ClientError as _e:
+        base_image = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+
+    if base_image and overlay:
+        base_image.paste(overlay_image, (0, 0), overlay_image)
+
+    return base_image
 
 
 def test_if_tile_exists(key_name, bucket_name):
