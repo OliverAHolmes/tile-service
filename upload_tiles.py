@@ -78,10 +78,6 @@ for z in zoom_levels:
         os.makedirs(f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}", exist_ok=True)
 
         tile_key = f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png"
-        
-        if(wasabisys.test_if_tile_exists(tile_key, "ollys-documents")):
-            zoom_count -= 1
-            continue
 
         # Save the image to directory
         return_tile.save(
@@ -95,10 +91,11 @@ for z in zoom_levels:
         # Write the PIL image to byte array
         return_tile.save(img_byte_arr, format="PNG")
 
-        wasabisys.upload_image(
-            f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png",
-            "ollys-documents",
-            io.BytesIO(img_byte_arr.getvalue()),
-        )
+        if(not wasabisys.test_if_tile_exists(tile_key, "ollys-documents")):
+            wasabisys.upload_image(
+                f"maps/645465335874aa00066577b2/{tile.z}/{tile.x}/{tile.y}.png",
+                "ollys-documents",
+                io.BytesIO(img_byte_arr.getvalue()),
+            )
         zoom_count -= 1
         print(f"Tiles remaining: {zoom_count} in zoom level {z}")

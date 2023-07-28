@@ -1,19 +1,27 @@
-import logging, io
+import logging, io, os
 import boto3
 import cv2
 import numpy as np
 from botocore.exceptions import ClientError
 from PIL import Image
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
+ENDPOINT_URL = os.getenv("ENDPOINT_URL")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 s3 = boto3.resource(
     "s3",
-    endpoint_url="https://s3.ap-southeast-2.wasabisys.com",
-    aws_access_key_id="2P801GRW1DVXZXRTE6NY",
-    aws_secret_access_key="XuDYIb8rdl3fGH4SeKvBCyM7QDEzmebXukpqlNFK",
+    endpoint_url=ENDPOINT_URL,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )
 
 
 def enhance_image(image):
+    """Function for balancing a tile image using a histogram equalization."""
     # Convert byte stream to byte array and load the image from the byte array
     arr = np.frombuffer(image.getvalue(), np.uint8)
     image = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)  # Keep all color channels
@@ -54,16 +62,18 @@ def enhance_image(image):
 
 
 def upload_image(key_name, bucket_name, file_obj):
+    """Function for uploading a tile image."""
     try:
         # Get bucket object
         s3.Bucket(bucket_name).put_object(Key=key_name, Body=file_obj)
-    except ClientError as e:
-        logging.error(e)
+    except ClientError as client_error:
+        logging.error(client_error)
         return False
     return True
 
 
 def download_image(key_name, bucket_name, enhance=False, overlay=False):
+    """Function for downloading a tile image."""
     base_image = None
     overlay_image = Image.open("GeoNotesOverlay.png") if overlay else None
 
@@ -86,12 +96,10 @@ def download_image(key_name, bucket_name, enhance=False, overlay=False):
 
 
 def test_if_tile_exists(key_name, bucket_name):
+    """Test if a tile image for key exists in the data store."""
     try:
         s3.Object(bucket_name, key_name).load()
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "404":
-            print("The object does not exist.")
-        else:
-            return False
+    except ClientError as _client_error:
+        return False
     else:
         return True
